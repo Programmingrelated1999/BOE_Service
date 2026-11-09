@@ -1,0 +1,27 @@
+import re
+
+# Regex Patterns - Dates Extraction
+MEETING_DATE_PATTERNS = [
+    re.compile(r"meeting ending on\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})"),
+    re.compile(
+        r"COMMITTEE MEETING\s+\d{1,2}(?:\s+[A-Za-z]+)?\s+and\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})"
+    ),
+]
+
+# Regex Patterns - Published Date
+PUBLISHED_DATE_PATTERNS = [
+    re.compile(r"Publication date:\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})"),
+    re.compile(
+        r"meeting ending on\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})"
+    ),
+]
+
+# Regex Patterns - Headers
+BOE_FOOTER_PATTERNS = [
+    re.compile(
+        r"Bank of England\s+Minutes of the Monetary Policy Committee Meeting ending on\s+"
+        r"(?:\d{1,2}(?:\s+[A-Za-z]+)?\s+and\s+)?\d{1,2}\s+[A-Z]+\s+\d{4}"
+        r"\s+\d{1,2}",
+        re.IGNORECASE,
+    ),
+]
