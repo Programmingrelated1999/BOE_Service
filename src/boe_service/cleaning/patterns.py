@@ -31,3 +31,19 @@ MPS_FOOTER_PATTERNS = [
         re.IGNORECASE,
     ),
 ]
+
+# MPC - Published Date
+MPC_PUBLISHED_DATE_PATTERNS = [
+    re.compile(r"(\d{1,2}\s+[A-Za-z]+\s+\d{4})"),
+]
+
+# Minutes Published Date
+MINUTES_PUBLISHED_DATE_PATTERNS = [
+    re.compile(r"Publication date:\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})")
+]
+
+MINUTES_MEETING_DATE_PATTERNS = [
+    re.compile(
+        r"These are the minutes of the Monetary Policy Committee meeting held on\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})"
+    )
+]

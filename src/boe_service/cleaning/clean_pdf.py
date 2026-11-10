@@ -1,10 +1,14 @@
+import json
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from boe_service.cleaning.patterns import (
+    MINUTES_MEETING_DATE_PATTERNS,
     MINUTES_PATTERN,
+    MINUTES_PUBLISHED_DATE_PATTERNS,
     MONTH_YEAR_PATTERN,
+    MPC_PUBLISHED_DATE_PATTERNS,
     MPC_YEAR_MONTH_PATTERN,
     MPS_FOOTER_PATTERNS,
     MPS_MEETING_DATE_PATTERNS,
@@ -47,6 +51,11 @@ def search_meeting_date(text: str, doc_type: str) -> datetime | None:
             meeting_date = pattern.search(text)
             if meeting_date:
                 return meeting_date
+    if doc_type == "minutes":
+        for pattern in MINUTES_MEETING_DATE_PATTERNS:
+            meeting_date = pattern.search(text)
+            if meeting_date:
+                return meeting_date
     return None
 
 
@@ -54,14 +63,24 @@ def search_meeting_date(text: str, doc_type: str) -> datetime | None:
 def search_published_date(text: str, doc_type: str) -> datetime | None:
     if doc_type in ["month-year", "mps"]:
         for pattern in MPS_PUBLISHED_DATE_PATTERNS:
-            meeting_date = pattern.search(text)
-            if meeting_date:
-                return meeting_date
+            published_date = pattern.search(text)
+            if published_date:
+                return published_date
+    if doc_type == "mpc-month-year":
+        for pattern in MPC_PUBLISHED_DATE_PATTERNS:
+            published_date = pattern.search(text)
+            if published_date:
+                return published_date
+    if doc_type == "minutes":
+        for pattern in MINUTES_PUBLISHED_DATE_PATTERNS:
+            published_date = pattern.search(text)
+            if published_date:
+                return published_date
     return None
 
 
 # Remove Footer In Pages
-def remove_boe_footer(text: str) -> str:
+def remove_footer(text: str) -> str:
     replaced = False
     for pattern in MPS_FOOTER_PATTERNS:
         text, n = pattern.subn("", text)
@@ -85,7 +104,7 @@ def split_into_paragraphs():
 def extract_date(text: str, doc_type: str) -> dict[str, str] | None:
     meeting_date = search_meeting_date(text, doc_type)
     published_date = search_published_date(text, doc_type)
-    if meeting_date:
+    if meeting_date and doc_type in ["month-year", "mps"]:
         meeting_date = datetime.strptime(meeting_date.group(1), "%d %B %Y").date()
         published_date = (
             datetime.strptime(published_date.group(1), "%d %B %Y").date()
@@ -96,6 +115,16 @@ def extract_date(text: str, doc_type: str) -> dict[str, str] | None:
             "meeting_date": meeting_date.isoformat(),
             "published_date": published_date.isoformat(),
         }
+    elif doc_type == "mpc-month-year" or doc_type == "minutes":
+        if meeting_date:
+            meeting_date = (
+                datetime.strptime(meeting_date.group(1), "%d %B %Y").date().isoformat()
+            )
+        published_date = datetime.strptime(published_date.group(1), "%d %B %Y").date()
+        return {
+            "meeting_date": meeting_date,
+            "published_date": published_date.isoformat(),
+        }
     return None
 
 
@@ -103,15 +132,23 @@ def extract_date(text: str, doc_type: str) -> dict[str, str] | None:
 def clean_data_in_text_files():
     CLEANED_PATH.mkdir(parents=True, exist_ok=True)
     count = 0
-    meta_data = {}
+    data = []
     for i in EXTRACT_PATH.iterdir():
         doc_type = check_doc_type(i.stem)
         pages = read_text_split_pages(i)
         dates = extract_date(pages[0], doc_type)
         if dates:
-            meta_data["published_date"] = dates["published_date"]
-            print(meta_data)
+            data.append(
+                {
+                    "name": i.name,
+                    "meeting_date": dates["meeting_date"],
+                    "published_date": dates["published_date"],
+                }
+            )
     print("Count: ", count)
+    data.sort(key=lambda d: d["published_date"])
+    with open("data.json", "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
 
 
 # Main Function
