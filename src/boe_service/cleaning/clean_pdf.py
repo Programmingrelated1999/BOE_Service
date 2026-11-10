@@ -18,22 +18,26 @@ EXTRACT_PATH = ROOT_PATH / "data/extracted"
 CLEANED_PATH = ROOT_PATH / "data/cleaned"
 
 
-def doc_analysis():
-    doc_type_counter = {}
+# Scan Through Text Files. Print A Counter Of Each Type By Identifying Naming Convention Through Regex.
+def doc_type_counter():
+    counter = {}
     for i in EXTRACT_PATH.iterdir():
-        if re.fullmatch(MONTH_YEAR_PATTERN, i.stem):
-            doc_type_counter["month-year"] = doc_type_counter.get("month-year", 0) + 1
-        elif re.fullmatch(MPC_YEAR_MONTH_PATTERN, i.stem):
-            doc_type_counter["mpc-month-year"] = (
-                doc_type_counter.get("mpc-month-year", 0) + 1
-            )
-        elif re.fullmatch(MPS_PATTERN, i.stem):
-            doc_type_counter["mps"] = doc_type_counter.get("mps", 0) + 1
-        elif re.fullmatch(MINUTES_PATTERN, i.stem):
-            doc_type_counter["minutes"] = doc_type_counter.get("minutes", 0) + 1
-        else:
-            doc_type_counter["others"] = doc_type_counter.get("others", 0) + 1
-    print(doc_type_counter)
+        doc_type = check_doc_type(i.stem)
+        counter[doc_type] = counter.get(doc_type, 0) + 1
+    print(counter)
+
+
+# Stem of Text
+def check_doc_type(stem: str) -> str:
+    if re.fullmatch(MONTH_YEAR_PATTERN, stem):
+        return "month-year"
+    if re.fullmatch(MPC_YEAR_MONTH_PATTERN, stem):
+        return "mpc-month-year"
+    if re.fullmatch(MPS_PATTERN, stem):
+        return "mps"
+    if re.fullmatch(MINUTES_PATTERN, stem):
+        return "minutes"
+    return "other"
 
 
 # Search Meeting Date With Regex
@@ -119,7 +123,7 @@ def clean_data_in_text_files():
 # Main Function
 def main():
     # clean_data_in_text_files()
-    doc_analysis()
+    doc_type_counter()
 
 
 if __name__ == "__main__":
