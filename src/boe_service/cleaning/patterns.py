@@ -44,6 +44,7 @@ MINUTES_PUBLISHED_DATE_PATTERNS = [
 
 MINUTES_MEETING_DATE_PATTERNS = [
     re.compile(
-        r"These are the minutes of the Monetary Policy Committee meeting held on\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})"
+        r"COMMITTEE MEETING\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        re.IGNORECASE,
     )
 ]

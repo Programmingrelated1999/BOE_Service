@@ -3,16 +3,13 @@ import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from boe_service.cleaning.helpers import check_doc_type, doc_type_counter
 from boe_service.cleaning.patterns import (
     MINUTES_MEETING_DATE_PATTERNS,
-    MINUTES_PATTERN,
     MINUTES_PUBLISHED_DATE_PATTERNS,
-    MONTH_YEAR_PATTERN,
     MPC_PUBLISHED_DATE_PATTERNS,
-    MPC_YEAR_MONTH_PATTERN,
     MPS_FOOTER_PATTERNS,
     MPS_MEETING_DATE_PATTERNS,
-    MPS_PATTERN,
     MPS_PUBLISHED_DATE_PATTERNS,
 )
 
@@ -22,60 +19,36 @@ EXTRACT_PATH = ROOT_PATH / "data/extracted"
 CLEANED_PATH = ROOT_PATH / "data/cleaned"
 
 
-# Scan Through Text Files. Print A Counter Of Each Type By Identifying Naming Convention Through Regex.
-def doc_type_counter():
-    counter = {}
-    for i in EXTRACT_PATH.iterdir():
-        doc_type = check_doc_type(i.stem)
-        counter[doc_type] = counter.get(doc_type, 0) + 1
-    print(counter)
+# Read Text From Address And Return List Of Seperated Text By Page
+def read_text_split_pages(addr: str) -> list[str]:
+    txt = Path.read_text(addr)
+    return txt.lstrip().split("\f")
 
 
-# Stem of Text
-def check_doc_type(stem: str) -> str:
-    if re.fullmatch(MONTH_YEAR_PATTERN, stem):
-        return "month-year"
-    if re.fullmatch(MPC_YEAR_MONTH_PATTERN, stem):
-        return "mpc-month-year"
-    if re.fullmatch(MPS_PATTERN, stem):
-        return "mps"
-    if re.fullmatch(MINUTES_PATTERN, stem):
-        return "minutes"
-    return "other"
+# Search And Return Any Matching Dates From Given Patterns
+def search_date(text: str, patterns: list[re.Pattern[str]]) -> str | None:
+    for pattern in patterns:
+        date = pattern.search(text)
+        return date if date else None
 
 
-# Search Meeting Date With Regex
-def search_meeting_date(text: str, doc_type: str) -> datetime | None:
+# Determine Regex Pattern For Meeting Date And Call Search Date
+def search_meeting_date(text: str, doc_type: str) -> str | None:
     if doc_type in ["month-year", "mps"]:
-        for pattern in MPS_MEETING_DATE_PATTERNS:
-            meeting_date = pattern.search(text)
-            if meeting_date:
-                return meeting_date
+        return search_date(text, MPS_MEETING_DATE_PATTERNS)
     if doc_type == "minutes":
-        for pattern in MINUTES_MEETING_DATE_PATTERNS:
-            meeting_date = pattern.search(text)
-            if meeting_date:
-                return meeting_date
+        return search_date(text, MINUTES_MEETING_DATE_PATTERNS)
     return None
 
 
-# Search Published Date With Regex
-def search_published_date(text: str, doc_type: str) -> datetime | None:
+# Determine Regex Pattern For Published Date And Call Search Date
+def search_published_date(text: str, doc_type: str) -> str | None:
     if doc_type in ["month-year", "mps"]:
-        for pattern in MPS_PUBLISHED_DATE_PATTERNS:
-            published_date = pattern.search(text)
-            if published_date:
-                return published_date
+        return search_date(text, MPS_PUBLISHED_DATE_PATTERNS)
     if doc_type == "mpc-month-year":
-        for pattern in MPC_PUBLISHED_DATE_PATTERNS:
-            published_date = pattern.search(text)
-            if published_date:
-                return published_date
+        return search_date(text, MPC_PUBLISHED_DATE_PATTERNS)
     if doc_type == "minutes":
-        for pattern in MINUTES_PUBLISHED_DATE_PATTERNS:
-            published_date = pattern.search(text)
-            if published_date:
-                return published_date
+        return search_date(text, MINUTES_PUBLISHED_DATE_PATTERNS)
     return None
 
 
@@ -87,12 +60,6 @@ def remove_footer(text: str) -> str:
         if n:
             replaced = True
     return text, replaced
-
-
-# Read Text From Address And Return List Of Seperated Text By Page
-def read_text_split_pages(addr: str) -> list[str]:
-    txt = Path.read_text(addr)
-    return txt.lstrip().split("\f")
 
 
 # Split One Large Text Into Paragraphs Numbered
@@ -128,15 +95,18 @@ def extract_date(text: str, doc_type: str) -> dict[str, str] | None:
     return None
 
 
+# Filter Noise
+def preprocess_text(pages: list[str]) -> str:
+    pass
+
+
 # Extract Text From All Reports And Save Them In Extracted Folder As Txt Files
 def clean_data_in_text_files():
     CLEANED_PATH.mkdir(parents=True, exist_ok=True)
-    count = 0
     data = []
     for i in EXTRACT_PATH.iterdir():
-        doc_type = check_doc_type(i.stem)
         pages = read_text_split_pages(i)
-        dates = extract_date(pages[0], doc_type)
+        dates = extract_date(pages[0], doc_type=check_doc_type(i.stem))
         if dates:
             data.append(
                 {
@@ -145,7 +115,6 @@ def clean_data_in_text_files():
                     "published_date": dates["published_date"],
                 }
             )
-    print("Count: ", count)
     data.sort(key=lambda d: d["published_date"])
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
