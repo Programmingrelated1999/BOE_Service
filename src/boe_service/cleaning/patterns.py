@@ -1,5 +1,11 @@
 import re
 
+# Regex For Text Files
+MONTH_YEAR_PATTERN = re.compile(r"[A-Za-z]+-\d{4}")
+MPC_YEAR_MONTH_PATTERN = re.compile(r"mpc-[A-Za-z]+-\d{4}")
+MPS_PATTERN = re.compile(r"monetary-policy-summary-and-minutes-[A-Za-z]+-\d{4}")
+MINUTES_PATTERN = re.compile(r"minutes-[A-Za-z]+-\d{4}")
+
 # Regex Patterns - Dates Extraction
 MEETING_DATE_PATTERNS = [
     re.compile(r"meeting ending on\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})"),

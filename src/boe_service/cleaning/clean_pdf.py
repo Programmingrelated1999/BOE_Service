@@ -1,9 +1,14 @@
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
 from boe_service.cleaning.patterns import (
     BOE_FOOTER_PATTERNS,
     MEETING_DATE_PATTERNS,
+    MINUTES_PATTERN,
+    MONTH_YEAR_PATTERN,
+    MPC_YEAR_MONTH_PATTERN,
+    MPS_PATTERN,
     PUBLISHED_DATE_PATTERNS,
 )
 
@@ -11,6 +16,24 @@ from boe_service.cleaning.patterns import (
 ROOT_PATH = Path(__file__).parent.parent.parent.parent
 EXTRACT_PATH = ROOT_PATH / "data/extracted"
 CLEANED_PATH = ROOT_PATH / "data/cleaned"
+
+
+def doc_analysis():
+    doc_type_counter = {}
+    for i in EXTRACT_PATH.iterdir():
+        if re.fullmatch(MONTH_YEAR_PATTERN, i.stem):
+            doc_type_counter["month-year"] = doc_type_counter.get("month-year", 0) + 1
+        elif re.fullmatch(MPC_YEAR_MONTH_PATTERN, i.stem):
+            doc_type_counter["mpc-month-year"] = (
+                doc_type_counter.get("mpc-month-year", 0) + 1
+            )
+        elif re.fullmatch(MPS_PATTERN, i.stem):
+            doc_type_counter["mps"] = doc_type_counter.get("mps", 0) + 1
+        elif re.fullmatch(MINUTES_PATTERN, i.stem):
+            doc_type_counter["minutes"] = doc_type_counter.get("minutes", 0) + 1
+        else:
+            doc_type_counter["others"] = doc_type_counter.get("others", 0) + 1
+    print(doc_type_counter)
 
 
 # Search Meeting Date With Regex
@@ -72,13 +95,14 @@ def clean_data_in_text_files():
     meta_data = {}
     count = 0
     count_list = []
+    publish_list = []
 
     for i in EXTRACT_PATH.iterdir():
         pages = read_txt(i)
         if extract_date(pages[0]) is not None:
             [meeting_date, published_date] = extract_date(pages[0])
             meta_data["published_date"] = published_date
-            # count += 1
+            publish_list.append(i.name)
         for j in pages:
             footer, replaced = remove_boe_footer(j)
             if replaced:
@@ -88,11 +112,14 @@ def clean_data_in_text_files():
     empty_list_str = "\n".join([i["name"] for i in count_list if i["count"] == 0])
     with open("output.txt", "w", encoding="utf-8") as f:
         f.write(empty_list_str)
+    with open("p_output.txt", "w", encoding="utf-8") as f:
+        f.write("\n".join(publish_list))
 
 
 # Main Function
 def main():
-    clean_data_in_text_files()
+    # clean_data_in_text_files()
+    doc_analysis()
 
 
 if __name__ == "__main__":
