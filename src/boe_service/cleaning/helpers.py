@@ -8,6 +8,11 @@ from boe_service.cleaning.patterns import (
     MPS_PATTERN,
 )
 
+# Define paths
+ROOT_PATH = Path(__file__).parent.parent.parent.parent
+EXTRACT_PATH = ROOT_PATH / "data/extracted"
+CLEANED_PATH = ROOT_PATH / "data/cleaned"
+
 
 # Scan Through Text Files. Print A Counter Of Each Type By Identifying Naming Convention Through Regex.
 def doc_type_counter():
@@ -16,12 +21,6 @@ def doc_type_counter():
         doc_type = check_doc_type(i.stem)
         counter[doc_type] = counter.get(doc_type, 0) + 1
     print(counter)
-
-
-# Define paths
-ROOT_PATH = Path(__file__).parent.parent.parent.parent
-EXTRACT_PATH = ROOT_PATH / "data/extracted"
-CLEANED_PATH = ROOT_PATH / "data/cleaned"
 
 
 # Stem of Text

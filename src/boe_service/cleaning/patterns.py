@@ -22,16 +22,6 @@ MPS_PUBLISHED_DATE_PATTERNS = [
     ),
 ]
 
-# Regex Patterns - Headers
-MPS_FOOTER_PATTERNS = [
-    re.compile(
-        r"Bank of England\s+Minutes of the Monetary Policy Committee Meeting ending on\s+"
-        r"(?:\d{1,2}(?:\s+[A-Za-z]+)?\s+and\s+)?\d{1,2}\s+[A-Z]+\s+\d{4}"
-        r"\s+\d{1,2}",
-        re.IGNORECASE,
-    ),
-]
-
 # MPC - Published Date
 MPC_PUBLISHED_DATE_PATTERNS = [
     re.compile(r"(\d{1,2}\s+[A-Za-z]+\s+\d{4})"),
@@ -44,7 +34,19 @@ MINUTES_PUBLISHED_DATE_PATTERNS = [
 
 MINUTES_MEETING_DATE_PATTERNS = [
     re.compile(
-        r"COMMITTEE MEETING\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        r"committee\s+meeting\s+(?:\d{1,2}(?:\s+[A-Za-z]+)?\s+and\s+)?(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
         re.IGNORECASE,
-    )
+    ),
+    re.compile(r"meeting ending on\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})", re.IGNORECASE),
+    re.compile(r"meeting ending\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})", re.IGNORECASE),
+]
+
+# Regex Patterns - Headers
+MPS_FOOTER_PATTERNS = [
+    re.compile(
+        r"Bank of England\s+Minutes of the Monetary Policy Committee Meeting ending on\s+"
+        r"(?:\d{1,2}(?:\s+[A-Za-z]+)?\s+and\s+)?\d{1,2}\s+[A-Z]+\s+\d{4}"
+        r"\s+\d{1,2}",
+        re.IGNORECASE,
+    ),
 ]

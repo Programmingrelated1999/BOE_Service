@@ -40,8 +40,6 @@ def search_meeting_date(text: str, doc_type: str) -> str | None:
         return search_date(text, MPS_MEETING_DATE_PATTERNS)
     if doc_type == "minutes":
         return search_date(text, MINUTES_MEETING_DATE_PATTERNS)
-    if doc_type == "mpc-month-year":
-        return search_date(text, MINUTES_MEETING_DATE_PATTERNS)
     return None
 
 
@@ -60,6 +58,7 @@ def search_published_date(text: str, doc_type: str) -> str | None:
 def extract_date(text: str, doc_type: str) -> dict[str, str]:
     meeting_date = search_meeting_date(text, doc_type)
     published_date = search_published_date(text, doc_type)
+
     if published_date:
         published_date = datetime.strptime(published_date.group(1), "%d %B %Y").date()
     if meeting_date:
@@ -69,11 +68,12 @@ def extract_date(text: str, doc_type: str) -> dict[str, str]:
 
     if meeting_date:
         meeting_date = meeting_date.isoformat()
+        # print(meeting_date) if doc_type == "minutes" else None
     if published_date:
         published_date = published_date.isoformat()
 
-    if published_date is None:
-        print(doc_type)
+    if doc_type == "minutes":
+        print(meeting_date)
 
     return {
         "meeting_date": meeting_date,
