@@ -19,8 +19,8 @@ EXTRACT_PATH = ROOT_PATH / "data/extracted"
 CLEANED_PATH = ROOT_PATH / "data/cleaned"
 
 
-# Read Text From Address And Return List Of Seperated Text By Page
-def read_text_split_pages(addr: str) -> list[str]:
+# Read Text From Address And Return List Of Seperated Text By Pages
+def split_pages(addr: str) -> list[str]:
     txt = Path.read_text(addr)
     return txt.lstrip().split("\f")
 
@@ -29,7 +29,9 @@ def read_text_split_pages(addr: str) -> list[str]:
 def search_date(text: str, patterns: list[re.Pattern[str]]) -> str | None:
     for pattern in patterns:
         date = pattern.search(text)
-        return date if date else None
+        if date:
+            return date
+    return None
 
 
 # Determine Regex Pattern For Meeting Date And Call Search Date
@@ -37,6 +39,8 @@ def search_meeting_date(text: str, doc_type: str) -> str | None:
     if doc_type in ["month-year", "mps"]:
         return search_date(text, MPS_MEETING_DATE_PATTERNS)
     if doc_type == "minutes":
+        return search_date(text, MINUTES_MEETING_DATE_PATTERNS)
+    if doc_type == "mpc-month-year":
         return search_date(text, MINUTES_MEETING_DATE_PATTERNS)
     return None
 
@@ -50,6 +54,31 @@ def search_published_date(text: str, doc_type: str) -> str | None:
     if doc_type == "minutes":
         return search_date(text, MINUTES_PUBLISHED_DATE_PATTERNS)
     return None
+
+
+# Extract Date Using Regex
+def extract_date(text: str, doc_type: str) -> dict[str, str]:
+    meeting_date = search_meeting_date(text, doc_type)
+    published_date = search_published_date(text, doc_type)
+    if published_date:
+        published_date = datetime.strptime(published_date.group(1), "%d %B %Y").date()
+    if meeting_date:
+        meeting_date = datetime.strptime(meeting_date.group(1), "%d %B %Y").date()
+        if doc_type in ["month-year", "mps"] and not published_date:
+            published_date = meeting_date + timedelta(1)
+
+    if meeting_date:
+        meeting_date = meeting_date.isoformat()
+    if published_date:
+        published_date = published_date.isoformat()
+
+    if published_date is None:
+        print(doc_type)
+
+    return {
+        "meeting_date": meeting_date,
+        "published_date": published_date,
+    }
 
 
 # Remove Footer In Pages
@@ -67,34 +96,6 @@ def split_into_paragraphs():
     return
 
 
-# Extract Date Using Regex
-def extract_date(text: str, doc_type: str) -> dict[str, str] | None:
-    meeting_date = search_meeting_date(text, doc_type)
-    published_date = search_published_date(text, doc_type)
-    if meeting_date and doc_type in ["month-year", "mps"]:
-        meeting_date = datetime.strptime(meeting_date.group(1), "%d %B %Y").date()
-        published_date = (
-            datetime.strptime(published_date.group(1), "%d %B %Y").date()
-            if published_date
-            else meeting_date + timedelta(1)
-        )  # Publish Date Pattern Search Missing - Set To One Day After Meeting Date
-        return {
-            "meeting_date": meeting_date.isoformat(),
-            "published_date": published_date.isoformat(),
-        }
-    elif doc_type == "mpc-month-year" or doc_type == "minutes":
-        if meeting_date:
-            meeting_date = (
-                datetime.strptime(meeting_date.group(1), "%d %B %Y").date().isoformat()
-            )
-        published_date = datetime.strptime(published_date.group(1), "%d %B %Y").date()
-        return {
-            "meeting_date": meeting_date,
-            "published_date": published_date.isoformat(),
-        }
-    return None
-
-
 # Filter Noise
 def preprocess_text(pages: list[str]) -> str:
     pass
@@ -105,7 +106,9 @@ def clean_data_in_text_files():
     CLEANED_PATH.mkdir(parents=True, exist_ok=True)
     data = []
     for i in EXTRACT_PATH.iterdir():
-        pages = read_text_split_pages(i)
+        pages = split_pages(i)
+        if check_doc_type(i.stem) == "other":
+            continue
         dates = extract_date(pages[0], doc_type=check_doc_type(i.stem))
         if dates:
             data.append(
@@ -115,6 +118,7 @@ def clean_data_in_text_files():
                     "published_date": dates["published_date"],
                 }
             )
+    print([i["published_date"] for i in data])
     data.sort(key=lambda d: d["published_date"])
     with open("data.json", "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
