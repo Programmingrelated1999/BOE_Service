@@ -48,3 +48,10 @@ MPS_HEADER_PATTERNS = [
 
 # NEW MPS FORMAT - START OF TEXT
 MPS_START_PATTERNS = [re.compile(r"Monetary Policy Summary,\s+[A-Za-z]+\s+\d{4}")]
+
+# NEW MPS FORMAT - SUMMARY PATTERN
+MPS_SUMMARY_PATTERNS = [
+    re.compile(
+        r"Minutes of the Monetary Policy Committee\s+meeting ending on\s+\d{1,2}\s+[A-Za-z]+\s+\d{4}"
+    )
+]
