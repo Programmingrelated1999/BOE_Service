@@ -1,16 +1,16 @@
-import json
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from boe_service.cleaning.helpers import check_doc_type, doc_type_counter
+from boe_service.cleaning.helpers import check_doc_type
 from boe_service.cleaning.patterns import (
     MINUTES_MEETING_DATE_PATTERNS,
     MINUTES_PUBLISHED_DATE_PATTERNS,
     MPC_PUBLISHED_DATE_PATTERNS,
-    MPS_FOOTER_PATTERNS,
+    MPS_HEADER_PATTERNS,
     MPS_MEETING_DATE_PATTERNS,
     MPS_PUBLISHED_DATE_PATTERNS,
+    MPS_START_PATTERNS,
 )
 
 # Define paths
@@ -60,20 +60,14 @@ def extract_date(text: str, doc_type: str) -> dict[str, str]:
     published_date = search_published_date(text, doc_type)
 
     if published_date:
-        published_date = datetime.strptime(published_date.group(1), "%d %B %Y").date()
+        published_date = (
+            datetime.strptime(published_date.group(1), "%d %B %Y").date().isoformat()
+        )
     if meeting_date:
         meeting_date = datetime.strptime(meeting_date.group(1), "%d %B %Y").date()
         if doc_type in ["month-year", "mps"] and not published_date:
-            published_date = meeting_date + timedelta(1)
-
-    if meeting_date:
+            published_date = (meeting_date + timedelta(1)).isoformat()
         meeting_date = meeting_date.isoformat()
-        # print(meeting_date) if doc_type == "minutes" else None
-    if published_date:
-        published_date = published_date.isoformat()
-
-    if doc_type == "minutes":
-        print(meeting_date)
 
     return {
         "meeting_date": meeting_date,
@@ -84,7 +78,7 @@ def extract_date(text: str, doc_type: str) -> dict[str, str]:
 # Remove Footer In Pages
 def remove_footer(text: str) -> str:
     replaced = False
-    for pattern in MPS_FOOTER_PATTERNS:
+    for pattern in MPS_HEADER_PATTERNS:
         text, n = pattern.subn("", text)
         if n:
             replaced = True
@@ -96,38 +90,52 @@ def split_into_paragraphs():
     return
 
 
-# Filter Noise
-def preprocess_text(pages: list[str]) -> str:
-    pass
+# Cut Text Start
+def cut_text_start(whole_text: str) -> str | None:
+    for pattern in MPS_START_PATTERNS:
+        match = pattern.search(whole_text)
+        if match:
+            return whole_text[match.start() :]
+    return None
+
+
+# Create Meta Field
+def create_meta_field(filename, meeting_date, published_date):
+    return {
+        "filename": f"{filename}.pdf",
+        "meeting_date": meeting_date,
+        "published_date": published_date,
+    }
 
 
 # Extract Text From All Reports And Save Them In Extracted Folder As Txt Files
 def clean_data_in_text_files():
-    CLEANED_PATH.mkdir(parents=True, exist_ok=True)
+    CLEANED_PATH.mkdir(parents=True, exist_ok=True)  # Create Folder Destination
     data = []
     for i in EXTRACT_PATH.iterdir():
-        pages = split_pages(i)
-        if check_doc_type(i.stem) == "other":
+        # Work Only With MPS - Which Start From May 2022
+        if check_doc_type(i.stem) != "mps":
             continue
+        print(i.name)
+        pages = split_pages(i)
         dates = extract_date(pages[0], doc_type=check_doc_type(i.stem))
         if dates:
             data.append(
-                {
-                    "name": i.name,
-                    "meeting_date": dates["meeting_date"],
-                    "published_date": dates["published_date"],
-                }
+                create_meta_field(
+                    i.stem, dates["meeting_date"], dates["published_date"]
+                )
             )
-    print([i["published_date"] for i in data])
-    data.sort(key=lambda d: d["published_date"])
-    with open("data.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+        pages_text = []
+        for p in pages:
+            text, _ = remove_footer(p)
+            pages_text.append(text)
+        whole_text = "".join(pages_text)
+        whole_text = cut_text_start(whole_text)
 
 
 # Main Function
 def main():
     clean_data_in_text_files()
-    doc_type_counter()
 
 
 if __name__ == "__main__":

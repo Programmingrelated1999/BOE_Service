@@ -41,12 +41,10 @@ MINUTES_MEETING_DATE_PATTERNS = [
     re.compile(r"meeting ending\s+(\d{1,2}\s+[A-Za-z]+\s+\d{4})", re.IGNORECASE),
 ]
 
-# Regex Patterns - Headers
-MPS_FOOTER_PATTERNS = [
-    re.compile(
-        r"Bank of England\s+Minutes of the Monetary Policy Committee Meeting ending on\s+"
-        r"(?:\d{1,2}(?:\s+[A-Za-z]+)?\s+and\s+)?\d{1,2}\s+[A-Z]+\s+\d{4}"
-        r"\s+\d{1,2}",
-        re.IGNORECASE,
-    ),
+# NEW MPS FORMAT - Footers
+MPS_HEADER_PATTERNS = [
+    re.compile(r"^[ \t]*Bank of England(?:\s+Page \d{1,2})?[ \t]*$", re.MULTILINE)
 ]
+
+# NEW MPS FORMAT - START OF TEXT
+MPS_START_PATTERNS = [re.compile(r"Monetary Policy Summary,\s+[A-Za-z]+\s+\d{4}")]
