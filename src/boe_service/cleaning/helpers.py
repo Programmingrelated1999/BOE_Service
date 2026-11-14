@@ -1,3 +1,4 @@
+import json
 import re
 from pathlib import Path
 
@@ -34,3 +35,9 @@ def check_doc_type(stem: str) -> str:
     if re.fullmatch(MINUTES_PATTERN, stem):
         return "minutes"
     return "other"
+
+
+# Save Cleaned Data For Pre Processing
+def save_to_json(data: dict, output_file: str) -> None:
+    with open(output_file, "w", encoding="utf-8") as file:
+        json.dump(data, file, ensure_ascii="False")
