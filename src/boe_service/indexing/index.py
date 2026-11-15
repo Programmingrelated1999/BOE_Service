@@ -2,11 +2,22 @@ import json
 import math
 from pathlib import Path
 
+from sentence_transformers import SentenceTransformer
+
+from boe_service.cleaning.helpers import save_to_json
+
 json_path = (
     Path(__file__).resolve().parent.parent.parent.parent
     / "data"
     / "cleaned"
     / "test.json"
+)
+
+chunck_path = (
+    Path(__file__).resolve().parent.parent.parent.parent
+    / "data"
+    / "cleaned"
+    / "chunck.json"
 )
 
 
@@ -17,6 +28,7 @@ def load_json():
         return data
 
 
+# Chunking Into Paragraphs
 def chunk_paragraphs(text: str, max_words: int = 300) -> list[str]:
     words = text.split()
     overlap = min(math.ceil(0.1 * max_words), max_words - 1)
@@ -39,11 +51,20 @@ def main():
 
     # load data
     data = load_json()
+    chunck_data = []
+    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
 
     for i in data:
         chunks = chunk_paragraphs(i["text"], 300)
-        print(len(chunks))
-    # print(max(paragraphs))
+        for c in chunks:
+            vector = model.encode(
+                c,
+                normalize_embeddings=True,
+            ).tolist()
+            new_data = {**i, "text": c, "vector": vector}
+            chunck_data.append(new_data)
+
+    save_to_json(chunck_data, chunck_path)
 
 
 if __name__ == "__main__":
