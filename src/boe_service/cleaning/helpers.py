@@ -38,6 +38,6 @@ def check_doc_type(stem: str) -> str:
 
 
 # Save Cleaned Data For Pre Processing
-def save_to_json(data: dict, output_file: str) -> None:
-    with open(output_file, "w", encoding="utf-8") as file:
+def save_to_json(data: dict, filename: str) -> None:
+    with open(filename, "w", encoding="utf-8") as file:
         json.dump(data, file, ensure_ascii="False")
