@@ -2,9 +2,11 @@ import json
 import math
 from pathlib import Path
 
+from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
 
 from boe_service.cleaning.helpers import save_to_json
+from boe_service.indexing.qdrant_db import connect_to_local
 
 json_path = (
     Path(__file__).resolve().parent.parent.parent.parent
@@ -22,8 +24,8 @@ chunck_path = (
 
 
 # Load Json
-def load_json():
-    with open(json_path) as file:
+def load_json(path: str):
+    with open(path) as file:
         data = json.load(file)
         return data
 
@@ -42,29 +44,56 @@ def chunk_paragraphs(text: str, max_words: int = 300) -> list[str]:
     return chunks
 
 
+def search_query():
+    pass
+
+
 # Main Function
 def main():
-    # Create a local Qdrant database
-    # client = connect_to_local()
-    # if not client:
-    #     return
-
-    # load data
-    data = load_json()
-    chunck_data = []
+    # Load Data
     model = SentenceTransformer("BAAI/bge-small-en-v1.5")
 
-    for i in data:
-        chunks = chunk_paragraphs(i["text"], 300)
-        for c in chunks:
-            vector = model.encode(
-                c,
-                normalize_embeddings=True,
-            ).tolist()
-            new_data = {**i, "text": c, "vector": vector}
-            chunck_data.append(new_data)
+    if not chunck_path.exists():
+        data = load_json(json_path)
+        chunck_data = []
+        # Chuck Data
+        for i in data:
+            chunks = chunk_paragraphs(i["text"], 300)
+            for c in chunks:
+                vector = model.encode(
+                    c,
+                    normalize_embeddings=True,
+                ).tolist()
+                new_data = {**i, "text": c, "vector": vector}
+                chunck_data.append(new_data)
+        save_to_json(chunck_data, chunck_path)
 
-    save_to_json(chunck_data, chunck_path)
+    # Create To A Local QDrant Database
+    client = connect_to_local()
+    if not client:
+        return
+
+    # Store In Database
+    if not client.collection_exists("documents"):
+        client.create_collection(
+            collection_name="documents",
+            vectors_config=VectorParams(size=384, distance=Distance.COSINE),
+        )
+
+    # Upload In Batches
+    records = load_json(chunck_path)
+    batch_size = 256
+    for i in range(0, len(records), batch_size):
+        batch = records[i : i + batch_size]
+        points = [
+            PointStruct(
+                id=i + j,
+                vector=r["vector"],
+                payload={k: v for k, v in r.items() if k != "vector"},
+            )
+            for j, r in enumerate(batch)
+        ]
+        client.upsert(collection_name="documents", points=points)
 
 
 if __name__ == "__main__":
