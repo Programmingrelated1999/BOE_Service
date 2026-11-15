@@ -19,21 +19,22 @@ def connect_to_local():
         return None
 
 
-def main():
-    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-
-    client = connect_to_local()
-    collection = client.get_collection("documents")
-    print(collection.points_count)
-
-    query = "What is the interest rate in May 2023?"
+def search(client: QdrantClient, model: SentenceTransformer, query: str):
     query_vector = model.encode(query).tolist()
     results = client.query_points(
         collection_name="documents", query=query_vector, limit=5
     )
     for point in results.points:
-        print("Score:", point.score)
-        print("Text:", point.payload["text"])
+        print("Score: ", point.score)
+        print("Filename: ", point.payload["filename"])
+        print("Published Date: ", point.payload["published_date"])
+
+
+def main():
+    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+
+    client = connect_to_local()
+    search(client, model, "What was the interest rate in May of 2023?")
 
 
 if __name__ == "__main__":
