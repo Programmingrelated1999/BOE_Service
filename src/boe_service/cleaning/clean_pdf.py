@@ -124,7 +124,7 @@ def clean_data_in_text_files():
                 )
                 if data:
                     all_data.append(data)
-    save_to_json(all_data, CLEANED_PATH / "test.json")
+    save_to_json(all_data, CLEANED_PATH / "data.json")
 
 
 # Main Function
