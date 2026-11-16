@@ -1,11 +1,14 @@
 from pathlib import Path
+from typing import Any
 
+import pandas as pd
 from sentence_transformers import SentenceTransformer
 
 from boe_service.qdrant_db import connect_to_local, filter_by_filename_and_index, search
-from boe_service.utils.json_utils import load_json
+from boe_service.utils.json_utils import load_json, save_to_json
 
 QA_JSON_PATH = Path(__file__).resolve().parent / "q_and_a.json"
+RESULTS_PATH = Path(__file__).resolve().parent / "results"
 
 
 # Calculate Cap-Recall
@@ -27,14 +30,54 @@ def calculate_hit_rate(p_scores):
     return total / len(p_scores) if len(p_scores) else 0.0
 
 
+def save_run(
+    name: str,
+    config: dict[str:Any],
+    metrics: dict[str:Any],
+    results_df: pd.DataFrame,
+):
+    details_path = RESULTS_PATH / f"{name}-details.csv"
+    summary_path = RESULTS_PATH / f"{name}-summary.json"
+    # Save Summary Data - Experiment Name, Config, Metrics
+    summary_data = {"name": name, "config": config, "metrics": metrics}
+    results_df.to_csv(details_path, index=False)
+    save_to_json(summary_data, summary_path)
+
+
+def get_curr_results_pd(question: str, search_results):
+    data = []
+    for r in search_results:
+        data.append(
+            [
+                question,
+                r.payload["text"],
+                r.score,
+                r.payload["filename"],
+                r.payload["index"],
+            ]
+        )
+    data = pd.DataFrame(
+        data,
+        columns=["Question", "Answer", "Score", "Filename", "Index"],
+    )
+    return data
+
+
 # Main
 def main():
     client = connect_to_local()
     model = SentenceTransformer("BAAI/bge-small-en-v1.5")
     data = load_json(QA_JSON_PATH)
+    results_df = pd.DataFrame(
+        columns=["Question", "Answer", "Score", "Filename", "Index"]
+    )
     p_scores = []
     for i in data:
-        search_results = search(client, model, i["question"])
+        search_results = search(client, model, i["question"], 5, True)
+        results_df = pd.concat(
+            [results_df, get_curr_results_pd(i["question"], search_results)],
+            ignore_index=True,
+        )
         chunks_in_section = filter_by_filename_and_index(
             client, i["filename"], i["index"]
         )
@@ -47,6 +90,25 @@ def main():
     print(f"Capp Recall Scores Average: {p_avg:.3f}")
     hit_rate = calculate_hit_rate(p_scores)
     print(f"Hit Rate: {hit_rate:.3f}")
+
+    save_run(
+        name="baseline",
+        config={
+            "model": "bge-small-en-v1.5",
+            "chunk_words": 300,
+            "overlap": 0.1,
+            "query_prefix": False,
+            "date_header": False,
+            "k": 5,
+        },
+        metrics={"cap_recall": p_avg, "hit_rate": hit_rate},
+        results_df=results_df,
+    )
+
+    q = data[0]["question"]
+    for flag in (False, True):
+        res = search(client, model, q, limit=5, use_q_prefix=flag)
+        print(flag, [round(r.score, 4) for r in res])
 
 
 if __name__ == "__main__":
