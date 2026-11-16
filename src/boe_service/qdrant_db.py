@@ -3,7 +3,14 @@ from typing import Any
 
 from dotenv import load_dotenv
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, PointStruct, VectorParams
+from qdrant_client.models import (
+    Distance,
+    FieldCondition,
+    Filter,
+    MatchValue,
+    PointStruct,
+    VectorParams,
+)
 from sentence_transformers import SentenceTransformer
 
 load_dotenv()
@@ -29,6 +36,26 @@ def search(client: QdrantClient, model: SentenceTransformer, query: str):
         collection_name="documents", query=query_vector, limit=5
     )
     return results.points
+
+
+def filter_by_filename_and_index(client: QdrantClient, filename: str, index: int):
+    points, _ = client.scroll(
+        collection_name="documents",
+        scroll_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="filename",
+                    match=MatchValue(value=filename),
+                ),
+                FieldCondition(
+                    key="index",
+                    match=MatchValue(value=index),
+                ),
+            ]
+        ),
+        limit=100,
+    )
+    return [p.payload for p in points]
 
 
 # Create Collection If Not Exists

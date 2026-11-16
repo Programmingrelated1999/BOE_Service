@@ -81,7 +81,7 @@ def create_meta_field(filename, meeting_date, published_date, part, text, index)
         "published_date": published_date,
         "part": part or None,
         "text": text,
-        "index": index or None,
+        "index": index,
     }
 
 
@@ -107,7 +107,7 @@ def clean_data_in_text_files():
             dates["published_date"],
             "summary",
             summary,
-            None,
+            0,
         )
         if data:
             all_data.append(data)
