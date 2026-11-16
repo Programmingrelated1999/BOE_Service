@@ -24,10 +24,7 @@ def search(client: QdrantClient, model: SentenceTransformer, query: str):
     results = client.query_points(
         collection_name="documents", query=query_vector, limit=5
     )
-    for point in results.points:
-        print("Score: ", point.score)
-        print("Filename: ", point.payload["filename"])
-        print("Published Date: ", point.payload["published_date"])
+    return results.points
 
 
 def main():

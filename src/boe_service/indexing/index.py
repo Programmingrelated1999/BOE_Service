@@ -44,10 +44,6 @@ def chunk_paragraphs(text: str, max_words: int = 300) -> list[str]:
     return chunks
 
 
-def search_query():
-    pass
-
-
 # Main Function
 def main():
     # Load Data
