@@ -19,6 +19,7 @@ def connect_to_local():
         return None
 
 
+# Search For Vector And Points
 def search(client: QdrantClient, model: SentenceTransformer, query: str):
     query_vector = model.encode(query).tolist()
     results = client.query_points(
@@ -29,7 +30,6 @@ def search(client: QdrantClient, model: SentenceTransformer, query: str):
 
 def main():
     model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-
     client = connect_to_local()
     search(client, model, "What was the interest rate in May of 2023?")
 

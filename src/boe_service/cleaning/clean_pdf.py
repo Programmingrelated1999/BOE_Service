@@ -2,12 +2,13 @@ import re
 from pathlib import Path
 
 from boe_service.cleaning.date_extraction import extract_date
-from boe_service.cleaning.helpers import check_doc_type, save_to_json
+from boe_service.cleaning.helpers import check_doc_type
 from boe_service.cleaning.patterns import (
     MPS_HEADER_PATTERNS,
     MPS_START_PATTERNS,
     MPS_SUMMARY_PATTERNS,
 )
+from boe_service.utils.json_utils import save_to_json
 
 # Define paths
 ROOT_PATH = Path(__file__).parent.parent.parent.parent

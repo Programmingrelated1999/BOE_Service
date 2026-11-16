@@ -2,8 +2,8 @@ from pathlib import Path
 
 from sentence_transformers import SentenceTransformer
 
-from boe_service.indexing.index import load_json
 from boe_service.indexing.qdrant_db import connect_to_local, search
+from boe_service.utils.json_utils import load_json
 
 json_path = Path(__file__).resolve().parent.parent.parent.parent / "q_and_a.json"
 

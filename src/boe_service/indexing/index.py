@@ -1,12 +1,11 @@
-import json
 import math
 from pathlib import Path
 
 from qdrant_client.models import Distance, PointStruct, VectorParams
 from sentence_transformers import SentenceTransformer
 
-from boe_service.cleaning.helpers import save_to_json
 from boe_service.indexing.qdrant_db import connect_to_local
+from boe_service.utils.json_utils import load_json, save_to_json
 
 json_path = (
     Path(__file__).resolve().parent.parent.parent.parent
@@ -21,13 +20,6 @@ chunck_path = (
     / "cleaned"
     / "chunck.json"
 )
-
-
-# Load Json
-def load_json(path: str):
-    with open(path) as file:
-        data = json.load(file)
-        return data
 
 
 # Chunking Into Paragraphs
