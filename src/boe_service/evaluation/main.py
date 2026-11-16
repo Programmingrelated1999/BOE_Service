@@ -2,7 +2,7 @@ from pathlib import Path
 
 from sentence_transformers import SentenceTransformer
 
-from boe_service.indexing.qdrant_db import connect_to_local, search
+from boe_service.qdrant_db import connect_to_local, search
 from boe_service.utils.json_utils import load_json
 
 qa_json_path = Path(__file__).resolve() / "q_and_a.json"
