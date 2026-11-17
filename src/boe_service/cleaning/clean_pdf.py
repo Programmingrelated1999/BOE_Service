@@ -54,7 +54,7 @@ def get_summary(whole_text: str) -> str:
 
 # Find The Label For Paragraph In MPS Text
 def find_number(text: str, n: int, pos: int = 0) -> re.Match[str] | None:
-    pattern = re.compile(rf"^[ \t]*{n}\.\s+", re.MULTILINE)
+    pattern = re.compile(rf"(?<![\d.,£$])\b{n}[.:]\s+(?=[A-Z])")
     return pattern.search(text, pos)
 
 
