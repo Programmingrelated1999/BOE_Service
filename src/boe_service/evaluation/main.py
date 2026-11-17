@@ -9,6 +9,18 @@ from boe_service.utils.json_utils import load_json, save_to_json
 
 QA_JSON_PATH = Path(__file__).resolve().parent / "q_and_a.json"
 RESULTS_PATH = Path(__file__).resolve().parent / "results"
+CHUNK_PATH = (
+    Path(__file__).resolve().parent.parent.parent.parent
+    / "data"
+    / "cleaned"
+    / "chunck.json"
+)
+DATA_PATH = CHUNK_PATH = (
+    Path(__file__).resolve().parent.parent.parent.parent
+    / "data"
+    / "cleaned"
+    / "data.json"
+)
 
 
 # Calculate Cap-Recall
@@ -44,7 +56,7 @@ def save_run(
     save_to_json(summary_data, summary_path)
 
 
-def get_curr_results_pd(question: str, search_results):
+def get_curr_results_pd(question: str, search_results, c_fname, c_index):
     data = []
     for r in search_results:
         data.append(
@@ -54,11 +66,21 @@ def get_curr_results_pd(question: str, search_results):
                 r.score,
                 r.payload["filename"],
                 r.payload["index"],
+                c_fname,
+                c_index,
             ]
         )
     data = pd.DataFrame(
         data,
-        columns=["Question", "Answer", "Score", "Filename", "Index"],
+        columns=[
+            "Question",
+            "Answer",
+            "Score",
+            "Filename",
+            "Index",
+            "Correct_Filename",
+            "Correct_Index",
+        ],
     )
     return data
 
@@ -69,13 +91,26 @@ def main():
     model = SentenceTransformer("BAAI/bge-small-en-v1.5")
     data = load_json(QA_JSON_PATH)
     results_df = pd.DataFrame(
-        columns=["Question", "Answer", "Score", "Filename", "Index"]
+        columns=[
+            "Question",
+            "Answer",
+            "Score",
+            "Filename",
+            "Index",
+            "Correct_Filename",
+            "Correct_Index",
+        ]
     )
     p_scores = []
     for i in data:
         search_results = search(client, model, i["question"], 5, True)
         results_df = pd.concat(
-            [results_df, get_curr_results_pd(i["question"], search_results)],
+            [
+                results_df,
+                get_curr_results_pd(
+                    i["question"], search_results, i["filename"], i["index"]
+                ),
+            ],
             ignore_index=True,
         )
         chunks_in_section = filter_by_filename_and_index(
@@ -92,13 +127,13 @@ def main():
     print(f"Hit Rate: {hit_rate:.3f}")
 
     save_run(
-        name="baseline",
+        name="date_header_prefix",
         config={
             "model": "bge-small-en-v1.5",
             "chunk_words": 300,
             "overlap": 0.1,
-            "query_prefix": False,
-            "date_header": False,
+            "query_prefix": True,
+            "date_header": True,
             "k": 5,
         },
         metrics={"cap_recall": p_avg, "hit_rate": hit_rate},

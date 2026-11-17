@@ -31,7 +31,7 @@ def main():
         chunck_data = []
         for i in data:
             chunks = chunk_paragraphs(i["text"], 300)
-            new_data = encode_chunked_text(chunks, i, model)
+            new_data = encode_chunked_text(chunks, i, model, True)
             chunck_data.extend(new_data)
         save_to_json(chunck_data, chunck_path)
 
