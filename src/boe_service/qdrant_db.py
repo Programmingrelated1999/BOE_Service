@@ -34,8 +34,8 @@ def search(
     client: QdrantClient,
     model: SentenceTransformer,
     query: str,
-    limit=5,
-    use_q_prefix=False,
+    limit: int = 5,
+    use_q_prefix: bool = False,
 ):
     if use_q_prefix:
         query = "Represent this sentence for searching relevant passages: " + query
