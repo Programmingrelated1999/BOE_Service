@@ -19,3 +19,4 @@
 <p>The documents and evaluation pipeline only consume documents from May 2022 to Sept 2026, as they are written in the same format. Documents from a different date range will later be included.</p>
 
 ## Architecture
+<img src = "./md_files/rag_pipeline.svg">
