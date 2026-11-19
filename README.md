@@ -12,7 +12,7 @@
 
 ## Reports Breakdown
 **Total Number Of Reports** - 117 reports. \
-**Reports Date Range** - 2013-2026. \
+**Reports Date Range** - 2012-2026. \
 **Types Of Reports** - [minutes, summary, apf, mpr]. 
 
 ## Current Version - 0.1
