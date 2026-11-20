@@ -9,7 +9,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "arcticdb==6.28.0",
-    "fastapi>=0.162.0",
+    "fastapi[standard]>=0.162.0",
     "langchain>=1.4.9",
     "langchain-openai>=1.7.4",
     "langchain-qdrant>=1.1.0",
