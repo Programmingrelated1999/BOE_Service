@@ -1,26 +1,11 @@
-from pathlib import Path
 from typing import Any
 
 import pandas as pd
 from sentence_transformers import SentenceTransformer
 
+from boe_service.config import EVAL_TEST_SET_PATH, RESULTS_PATH
 from boe_service.qdrant_db import connect_to_local, filter_by_filename_and_index, search
 from boe_service.utils.json_utils import load_json, save_to_json
-
-QA_JSON_PATH = Path(__file__).resolve().parent / "q_and_a.json"
-RESULTS_PATH = Path(__file__).resolve().parent / "results"
-CHUNK_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent
-    / "data"
-    / "cleaned"
-    / "chunck.json"
-)
-DATA_PATH = CHUNK_PATH = (
-    Path(__file__).resolve().parent.parent.parent.parent
-    / "data"
-    / "cleaned"
-    / "data.json"
-)
 
 
 # Calculate Cap-Recall
@@ -44,8 +29,8 @@ def calculate_hit_rate(p_scores):
 
 def save_run(
     name: str,
-    config: dict[str:Any],
-    metrics: dict[str:Any],
+    config: dict[str, Any],
+    metrics: dict[str, Any],
     results_df: pd.DataFrame,
 ):
     details_path = RESULTS_PATH / f"{name}-details.csv"
@@ -89,7 +74,7 @@ def get_curr_results_pd(question: str, search_results, c_fname, c_index):
 def main():
     client = connect_to_local()
     model = SentenceTransformer("BAAI/bge-small-en-v1.5")
-    data = load_json(QA_JSON_PATH)
+    data = load_json(EVAL_TEST_SET_PATH)
     results_df = pd.DataFrame(
         columns=[
             "Question",

@@ -13,3 +13,4 @@ async def chat(req: Request):
         return {"message": "Error There Is Not Message"}
     agent_answer = inquire(body["message"])
     return {"message": agent_answer}
+

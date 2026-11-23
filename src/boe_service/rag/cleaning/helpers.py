@@ -1,19 +1,38 @@
 import re
 from pathlib import Path
 
-from boe_service.cleaning.date_extraction import extract_date
-from boe_service.cleaning.helpers import check_doc_type
-from boe_service.cleaning.patterns import (
+from boe_service.config import EXTRACTED_FOLDER_PATH
+from boe_service.rag.cleaning.patterns import (
+    MINUTES_PATTERN,
+    MONTH_YEAR_PATTERN,
+    MPC_YEAR_MONTH_PATTERN,
     MPS_HEADER_PATTERNS,
+    MPS_PATTERN,
     MPS_START_PATTERNS,
     MPS_SUMMARY_PATTERNS,
 )
-from boe_service.utils.json_utils import save_to_json
 
-# Define paths
-ROOT_PATH = Path(__file__).parent.parent.parent.parent
-EXTRACT_PATH = ROOT_PATH / "data/extracted"
-CLEANED_PATH = ROOT_PATH / "data/cleaned"
+
+# Scan Through Text Files. Print A Counter Of Each Type By Identifying Naming Convention Through Regex.
+def doc_type_counter():
+    counter = {}
+    for i in EXTRACTED_FOLDER_PATH.iterdir():
+        doc_type = check_doc_type(i.stem)
+        counter[doc_type] = counter.get(doc_type, 0) + 1
+    print(counter)
+
+
+# Stem of Text
+def check_doc_type(stem: str) -> str:
+    if re.fullmatch(MONTH_YEAR_PATTERN, stem):
+        return "month-year"
+    if re.fullmatch(MPC_YEAR_MONTH_PATTERN, stem):
+        return "mpc-month-year"
+    if re.fullmatch(MPS_PATTERN, stem):
+        return "mps"
+    if re.fullmatch(MINUTES_PATTERN, stem):
+        return "minutes"
+    return "other"
 
 
 # Read Text From Address And Return List Of Seperated Text By Pages
@@ -83,54 +102,3 @@ def create_meta_field(filename, meeting_date, published_date, part, text, index)
         "text": text,
         "index": index,
     }
-
-
-# Extract Text From All Reports And Save Them As JSON File
-def clean_data_in_text_files():
-    # Create Folder Destination
-    CLEANED_PATH.mkdir(parents=True, exist_ok=True)
-    all_data = []
-    for i in EXTRACT_PATH.iterdir():
-        # Work Only With MPS - Which Start From May 2022
-        if check_doc_type(i.stem) != "mps":
-            continue
-        # Split Into Pages, Use First Page To Extract Dates, Join The Pages Into One Single Text
-        pages = split_pages(i)
-        dates = extract_date(pages[0], doc_type=check_doc_type(i.stem))
-        whole_text = "".join([text for text, _ in (remove_footer(p) for p in pages)])
-        whole_text = cut_text_start(whole_text)
-        # Splitting Text Into Summary And Indexed Chuncks.
-        summary, minutes = get_summary(whole_text)
-        data = create_meta_field(
-            i.stem,
-            dates["meeting_date"],
-            dates["published_date"],
-            "summary",
-            summary,
-            0,
-        )
-        if data:
-            all_data.append(data)
-        chuncks = split_into_paragraphs(minutes)
-        if len(chuncks) > 0:
-            for c in chuncks:
-                data = create_meta_field(
-                    i.stem,
-                    dates["meeting_date"],
-                    dates["published_date"],
-                    "minutes",
-                    c[1],
-                    c[0],
-                )
-                if data:
-                    all_data.append(data)
-    save_to_json(all_data, CLEANED_PATH / "data.json")
-
-
-# Main Function
-def main():
-    clean_data_in_text_files()
-
-
-if __name__ == "__main__":
-    main()

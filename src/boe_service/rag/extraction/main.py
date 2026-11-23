@@ -1,22 +1,17 @@
-from pathlib import Path
-
 import pymupdf
 
-# Define paths
-ROOT_PATH = Path(__file__).parent.parent.parent.parent
-EXTRACT_PATH = ROOT_PATH / "data/extracted"
-REPORT_PATH = ROOT_PATH / "data/reports"
+from boe_service.config import EXTRACTED_FOLDER_PATH, REPORTS_FOLDER_PATH
 
 
 # Extract Text From All Reports And Save Them In Extracted Folder As Txt Files
 def extract_txt_from_reports():
-    EXTRACT_PATH.mkdir(parents=True, exist_ok=True)
+    EXTRACTED_FOLDER_PATH.mkdir(parents=True, exist_ok=True)
     # For Each File - Transform Into Text Format
-    for i in REPORT_PATH.iterdir():
+    for i in REPORTS_FOLDER_PATH.iterdir():
         if i.suffix.lower() == ".pdf":
             with pymupdf.open(i) as doc:
                 txt = chr(12).join([page.get_text() for page in doc])
-            output_path = EXTRACT_PATH / f"{i.stem}.txt"
+            output_path = EXTRACTED_FOLDER_PATH / f"{i.stem}.txt"
             output_path.write_bytes(txt.encode())
 
 

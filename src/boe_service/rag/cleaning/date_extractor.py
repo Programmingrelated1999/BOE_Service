@@ -1,7 +1,7 @@
 import re
 from datetime import datetime, timedelta
 
-from boe_service.cleaning.patterns import (
+from boe_service.rag.cleaning.patterns import (
     MINUTES_MEETING_DATE_PATTERNS,
     MINUTES_PUBLISHED_DATE_PATTERNS,
     MPC_PUBLISHED_DATE_PATTERNS,
