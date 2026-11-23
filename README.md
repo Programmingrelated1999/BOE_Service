@@ -15,8 +15,14 @@
 **Reports Date Range** - 2012-2026. \
 **Types Of Reports** - [minutes, summary, apf, mpr]. 
 
+## Sentence Transfomers Models - Encoding 
+<ol>
+    <li><a href = "https://huggingface.co/BAAI/bge-small-en-v1.5">BAAI/bge-small-en-v1.5</a>: 33.4M Parameters</li>
+</ol>
+
 ## Current Version - 0.1
 <p>The documents and evaluation pipeline only consume documents from May 2022 to Sept 2026, as they are written in the same format. Documents from a different date range will later be included.</p>
 
 ## Architecture
 <img src = "./md_files/rag_pipeline.svg">
+
