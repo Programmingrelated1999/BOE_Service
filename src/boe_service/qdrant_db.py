@@ -32,6 +32,7 @@ def connect_to_local():
 # Search For Vector And Points
 def search(
     client: QdrantClient,
+    collection_name: str,
     model: SentenceTransformer,
     query: str,
     limit: int = 5,
@@ -41,14 +42,16 @@ def search(
         query = "Represent this sentence for searching relevant passages: " + query
     query_vector = model.encode(query, normalize_embeddings=True).tolist()
     results = client.query_points(
-        collection_name="documents", query=query_vector, limit=limit
+        collection_name=collection_name, query=query_vector, limit=limit
     )
     return results.points
 
 
-def filter_by_filename_and_index(client: QdrantClient, filename: str, index: int):
+def filter_by_filename_and_index(
+    client: QdrantClient, collection_name: str, filename: str, index: int
+):
     points, _ = client.scroll(
-        collection_name="documents",
+        collection_name=collection_name,
         scroll_filter=Filter(
             must=[
                 FieldCondition(

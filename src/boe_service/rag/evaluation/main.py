@@ -1,6 +1,7 @@
 from typing import Any
 
 import pandas as pd
+import typer
 from sentence_transformers import SentenceTransformer
 
 from boe_service.config import EVAL_TEST_SET_PATH, RESULTS_PATH
@@ -71,9 +72,13 @@ def get_curr_results_pd(question: str, search_results, c_fname, c_index):
 
 
 # Main
-def main():
+def main(collection_name: str, encoder_model: str):
+    if encoder_model == "small":
+        model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+    else:
+        model = SentenceTransformer("BAAI/bge-base-en-v1.5")
+
     client = connect_to_local()
-    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
     data = load_json(EVAL_TEST_SET_PATH)
     results_df = pd.DataFrame(
         columns=[
@@ -88,7 +93,7 @@ def main():
     )
     p_scores = []
     for i in data:
-        search_results = search(client, model, i["question"], 5, True)
+        search_results = search(client, collection_name, model, i["question"], 5, True)
         results_df = pd.concat(
             [
                 results_df,
@@ -99,7 +104,7 @@ def main():
             ignore_index=True,
         )
         chunks_in_section = filter_by_filename_and_index(
-            client, i["filename"], i["index"]
+            client, collection_name, i["filename"], i["index"]
         )
         p_scores.append(
             capped_recall(
@@ -112,13 +117,12 @@ def main():
     print(f"Hit Rate: {hit_rate:.3f}")
 
     save_run(
-        name="date_header_prefix",
+        name=collection_name,
         config={
-            "model": "bge-small-en-v1.5",
+            "collection_name": collection_name,
+            "model": encoder_model,
             "chunk_words": 300,
             "overlap": 0.1,
-            "query_prefix": True,
-            "date_header": True,
             "k": 5,
         },
         metrics={"cap_recall": p_avg, "hit_rate": hit_rate},
@@ -127,9 +131,9 @@ def main():
 
     q = data[0]["question"]
     for flag in (False, True):
-        res = search(client, model, q, limit=5, use_q_prefix=flag)
+        res = search(client, collection_name, model, q, limit=5, use_q_prefix=flag)
         print(flag, [round(r.score, 4) for r in res])
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)
