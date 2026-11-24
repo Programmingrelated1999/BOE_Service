@@ -19,7 +19,7 @@ QUESTION_FILE_PATH = (
     / "evaluation"
     / "q_and_a.json"
 )
-model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+model = SentenceTransformer("BAAI/bge-base-en-v1.5")
 
 SYSTEM_PROMPT = """You are a chat agent that will answer user's query about the economy and policies.
 You have access to tools that can retrieve information collected from Bank Of England's Monetary Policy and Minutes Meeting 
@@ -33,7 +33,7 @@ def retrieve_boe_information(query: str) -> list[dict] | str:
     score in vectors. The pool of documents stored are Bank of England's monetary policy summary
     from May 2022 - Sept 2026. The function will return the 5 paragraphs with their published date.
     The function will return error message string if retrival fail."""
-    result = search(client, model, query, 5, False)
+    result = search(client, "large_with_headers_documents", model, query, 5, False)
     if result is None or len(result) == 0:
         return "There is an unexpected failure in retrieving the text."
     retrieved_data = [
@@ -50,7 +50,7 @@ agent = create_agent(
 )
 
 
-def inquire(question: str):
+def send_message(question: str):
     response = agent.invoke({"messages": [HumanMessage(question)]})
     return response["messages"][-1].content
 
