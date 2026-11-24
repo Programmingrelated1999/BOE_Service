@@ -1,4 +1,7 @@
-from boe_service.config import EXTRACTED_FOLDER_PATH, INDEXED_JSON_PATH
+from boe_service.config import (
+    EXTRACTED_FOLDER_PATH,
+    INDEXED_JSON_PATH,
+)
 from boe_service.rag.cleaning.date_extractor import extract_date
 from boe_service.rag.cleaning.helpers import (
     check_doc_type,

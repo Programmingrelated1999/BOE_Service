@@ -6,7 +6,6 @@ REPORTS_FOLDER_PATH = PROJECT_ROOT / "data" / "reports"
 EXTRACTED_FOLDER_PATH = PROJECT_ROOT / "data" / "extracted"
 CLEANED_FOLDER_PATH = PROJECT_ROOT / "data" / "cleaned"
 
-ENCODED_JSON_PATH = CLEANED_FOLDER_PATH / "encoded.json"
 INDEXED_JSON_PATH = CLEANED_FOLDER_PATH / "indexed.json"
 
 EVAL_FOLDER = PROJECT_ROOT / "src" / "boe_service" / "rag" / "evaluation"
