@@ -1,27 +1,18 @@
-import os
+from contextlib import asynccontextmanager
 
-from dotenv import load_dotenv
-from fastapi import FastAPI, Request
-from sqlalchemy import create_engine, text
+import models  # noqa: F401
+from fastapi import FastAPI
 
-from boe_service.agent.agent import send_message
-
-app = FastAPI(title="BOE Service")
-
-load_dotenv()
-DATABASE_URL = f"postgresql+psycopg://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@localhost:{os.getenv('POSTGRES_PORT')}/{os.getenv('POSTGRES_DB')}"
-
-engine = create_engine(DATABASE_URL, echo=True)
-
-with engine.connect() as conn:
-    print(conn.execute(text("SELECT version();")).scalar())
+from boe_service.api.routes.chat_router import chat_router
+from pg_data import Base, engine
 
 
-@app.post("/chat")
-async def chat(req: Request):
-    body = await req.json()
-    user_message = body.get("message")
-    if not user_message:
-        return {"message": "Error There Is Not Message"}
-    agent_answer = send_message(body["message"])
-    return {"message": agent_answer}
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    yield
+
+
+# Create A LifeSpan
+app = FastAPI(title="BOE Service", lifespan=lifespan)
+app.include_router(chat_router)
