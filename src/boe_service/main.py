@@ -1,14 +1,15 @@
 from contextlib import asynccontextmanager
 
-import models  # noqa: F401
 from fastapi import FastAPI
 
-from boe_service.api.routes.chat_router import chat_router
-from pg_data import Base, engine
+import src.boe_service.api.models.models  # noqa: F401
+from boe_service.api.routes.chats_router import chat_router
+from boe_service.pg_db import Base, engine
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Create Tables
     Base.metadata.create_all(bind=engine)
     yield
 
